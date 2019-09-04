@@ -6,14 +6,14 @@ import PlantGeneration.Generate2DTriStructures as G2D
 import PlantGeneration.Generate3DTriStructures as G3D
 
 
+# TODO: Stem radius based on height/stem length
+# TODO: make fully vtk free leaf generator
+# TODO: Polydata noise addition and smoothing
 # TODO: Leaf-stem merge for plant generation
-# TODO: Camera pose and movement, saving stereo images with pose and doing a sweep of a plant/s
 # TODO: Surface texturing
 # TODO: Surface reflectivity
 # TODO: Shadows
-# TODO: Plant movement, growth, and node relative positioning
-# TODO: leaf occlusion test
-#TODO: make fully vtk free leaf generator
+# TODO: Plant movement, growth
 
 
 LOCAL_HOME_PATH = '/local/'
