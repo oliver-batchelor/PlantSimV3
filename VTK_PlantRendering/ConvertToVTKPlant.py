@@ -4,7 +4,7 @@ import geoplantrep as PG
 import numpy as np
 
 
-POT_SIZE = 0.1
+POT_SIZE = 0.08
 
 
 class vtkPlantData():
@@ -87,28 +87,22 @@ class vtkPlantData():
 
             # Create the tubes and spheres
             tuber = vtk.vtkTubeFilter()
+            tuber.SetNumberOfSides(round(np.random.rand()*4) + 6)
             tuber.SetInputData(tubePolyData)
-            tuber.SetNumberOfSides(5)
             tuber.SetVaryRadiusToVaryRadiusByAbsoluteScalar()
+            tuber.CappingOn()
             tuber.Update()
-            tube_tri_filter = vtk.vtkTriangleFilter()
-            tube_tri_filter.SetInputData(tuber.GetOutput())
-            tube_tri_filter.Update()
 
-            # stem_top_node = vtk.vtkSphereSource()
-            # stem_top_node.SetCenter(points[-1])
-            # stem_top_node.SetRadius(tubeRadius.GetTuple(i)[0])
-            # stem_top_node.Update()
-            # stem_base_node = vtk.vtkSphereSource()
-            # stem_base_node.SetCenter(points[0])
-            # stem_base_node.SetRadius(tubeRadius.GetTuple(0)[0])
-            # stem_base_node.Update()
+            smoothing_filter = vtk.vtkSmoothPolyDataFilter()
+            smoothing_filter.SetInputConnection(tuber.GetOutputPort())
+            smoothing_filter.FeatureEdgeSmoothingOn()
+            smoothing_filter.BoundarySmoothingOn()
+            smoothing_filter.Update()
 
             self.vtkObjects.extend(
                 [spline_points, spline, functionSource, interpolatedRadius, tubeColors, tubeRadius,
                  tubePolyData, tuber])
-            self.StemPolydataList.append(
-                tube_tri_filter.GetOutput())  # , stem_base_node.GetOutput(), stem_top_node.GetOutput()])
+            self.StemPolydataList.append(smoothing_filter.GetOutput())
 
     def ConstructVTKMesh(self):
         """Construct polydata triangle mesh objects from data"""

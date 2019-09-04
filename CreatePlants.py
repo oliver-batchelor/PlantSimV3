@@ -21,7 +21,7 @@ OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/'
 
 
 DISPLAY_PLANT_SAMPLES = True
-LOAD_PLANT = True
+LOAD_PLANT = False
 SAVE_PLANT = False
 
 rep_plant = PG.PlantData()
@@ -30,10 +30,9 @@ if LOAD_PLANT:
     rep_plant.LoadPlantFile('test_save.plant')
 else:
     # Generate Randomised plant using a combination of algorithms
-    GStem.GenRandSplineStem(rep_plant, 40)
+    GStem.GenRandSplineStem(rep_plant, 20)
     end_stem_indxs = GStem.FindEndSegIndxs(rep_plant)
-    G2D.GenRandMeshLeaves_1(rep_plant, end_stem_indxs[::2])
-    G2D.GenRandMeshLeaves_2(rep_plant, end_stem_indxs[1::2])
+    G2D.GenRandLeaves(rep_plant, end_stem_indxs)
     #G3D.GenRandFruit(rep_plant)
 
 
@@ -46,7 +45,7 @@ vtk_plant.CreatePolyDataActors()
 vtk_plant.SetActorPostions()
 
 plant_display = DP.plantVTKDataDisplay(vtk_plant)
-plant_display.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=600, res_y=600 )
+plant_display.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=1920, res_y=1080 )
 plant_display.AddActors()
 plant_display.InitInteractor()
 plant_display.InitLighting()

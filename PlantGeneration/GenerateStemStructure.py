@@ -2,30 +2,29 @@ import geoplantrep as PG
 import numpy as np
 
 STEMSEG_CNT_VAR = 3
-STEMSEG_LENGTH_MEAN = 0.06
-STEMSEG_LENGTH_VAR = 0.03
-STEMSEG_UPMUL_MEAN = 1.2
+STEMSEG_LENGTH_MEAN = 0.04
+STEMSEG_LENGTH_VAR = 0.02
+STEMSEG_UPMUL_MEAN = 1.6
 STEMSEG_UPMUL_VAR = 0.6
-STEMSEG_HORIZ_VAR = 0.06
-STEMSEG_OUTRAD_MUL = 0.01
+STEMSEG_HORIZ_VAR = 1.8
+STEMSEG_OUTRAD_MUL = 0.0005
 
-STEMPNT_CNT_MEAN = 4
-STEMPNT_CNT_VAR = 2
-STEMPNT_VECVAR_MEAN = 0.01
-STEMPNT_VECVAR_VAR = 0.005
-STEMPNT_SEP_VAR = 0.0005
-STEMPNT_VECOFFSET_VAR = 0.001
+STEMPNT_CNT_MEAN = 2
+STEMPNT_CNT_VAR = 1
+STEMPNT_SEP_VAR = 0.002
+STEMPNT_VECOFFSET_VAR = 0.01
 
-STEMRAD_RAD_VAR = 0.0005
-STEMRAD_MASS_MUL = 0.001
-STEMRAD_LENGTH_MUL = 0.001
+STEMTIPS_RAD = 0.001
+STEMRAD_RAD_VAR = 0.0001
+STEMRAD_MIN = 0.001
+STEMRAD_MAX = 0.01
 
 STEMCOL_R_MEAN = 100
-STEMCOL_R_VAR = 10
+STEMCOL_R_VAR = 12
 STEMCOL_G_MEAN = 160
-STEMCOL_G_VAR = 30
+STEMCOL_G_VAR = 10
 STEMCOL_B_MEAN = 50
-STEMCOL_B_VAR = 10
+STEMCOL_B_VAR = 5
 
 
 def FindEndSegIndxs(geo_plant_rep):
@@ -46,12 +45,16 @@ def GenRandStemRadii(geo_plant_rep, mode=0):
         spline_rad_set = []
 
         for point_n in range(len(seg_points)):
-
+            rad_mul = 1 + 2*(geo_plant_rep.numTubeSets - stemseg_idx)*STEMSEG_LENGTH_MEAN
             ################# Randomisations ##########################
-            pnt_rad = 0.003 + np.random.normal(scale=STEMRAD_RAD_VAR)
+            pnt_rad = min(max(STEMTIPS_RAD*rad_mul, STEMRAD_MIN)  + rad_mul*np.random.normal(scale=STEMRAD_RAD_VAR), STEMRAD_MAX)
             ###########################################################
 
             spline_rad_set.append(pnt_rad)
+        if stemseg_idx > 0:
+            spline_rad_set[0] = geo_plant_rep.tubeRadSets[geo_plant_rep.tubeConnIdxs[stemseg_idx]][-1]*0.99
+            spline_rad_set[1] = geo_plant_rep.tubeRadSets[geo_plant_rep.tubeConnIdxs[stemseg_idx]][-1]*1.1
+            spline_rad_set[2] = geo_plant_rep.tubeRadSets[geo_plant_rep.tubeConnIdxs[stemseg_idx]][-1] * 1.2
         geo_plant_rep.tubeRadSets.append(spline_rad_set)
 
 
@@ -61,7 +64,6 @@ def GenRandStemCols(geo_plant_rep, mode=0):
         spline_col_set = []
 
         for point_n in range(len(seg_points)):
-
             ################# Randomisations ##########################
             pnt_col = (np.random.normal(loc=STEMCOL_R_MEAN, scale=STEMCOL_R_VAR),
                        np.random.normal(loc=STEMCOL_G_MEAN, scale=STEMCOL_G_VAR),
@@ -69,13 +71,33 @@ def GenRandStemCols(geo_plant_rep, mode=0):
             ###########################################################
 
             spline_col_set.append(pnt_col)
+        if stemseg_idx > 0:
+            spline_col_set[0] = geo_plant_rep.tubeColSets[geo_plant_rep.tubeConnIdxs[stemseg_idx]][-2]
+            spline_col_set[1] = geo_plant_rep.tubeColSets[geo_plant_rep.tubeConnIdxs[stemseg_idx]][-1]
         geo_plant_rep.tubeColSets.append(spline_col_set)
 
 
-def GenRandSplineSeg(geo_plant_rep, seg_vec, seg_length, num_points, mode=0):
+def GenRandSplineSeg(geo_plant_rep, seg_vec, mode=0):
     """Generates randomised spline segment for stem given randomised parameters"""
-    spline_pnt_set = [[0, 0, 0]]
-    point_sep_mean = seg_length / (num_points + 1)
+
+    ################# Randomisations ##########################
+    up_bias = np.random.normal(loc=STEMSEG_UPMUL_MEAN, scale=STEMSEG_UPMUL_VAR)
+
+    dx = np.random.normal(loc=STEMSEG_OUTRAD_MUL * np.sign(seg_vec[0]),
+                          scale=STEMSEG_HORIZ_VAR)
+    dz = np.random.normal(loc=STEMSEG_OUTRAD_MUL * np.sign(seg_vec[2]),
+                          scale=STEMSEG_HORIZ_VAR)
+    dy = np.sqrt(dx ** 2 + dz ** 2) * up_bias
+
+    new_seg_vec = seg_vec + np.array([dx, dy, dz])*0.1/np.linalg.norm([dx, dy, dz], 2)
+    new_seg_vec /= np.linalg.norm(new_seg_vec, 2)
+
+    seg_length = np.random.normal(loc=STEMSEG_LENGTH_MEAN, scale=STEMSEG_LENGTH_VAR)
+    num_points = max(round(np.random.normal(loc=STEMPNT_CNT_MEAN, scale=STEMPNT_CNT_VAR)), 1)
+    ###########################################################
+
+    point_sep_mean = seg_length / num_points
+    spline_pnt_set = [-seg_vec*0.0005, [0, 0, 0], seg_vec*0.0005]
 
     for point_n in range(num_points):
 
@@ -87,9 +109,8 @@ def GenRandSplineSeg(geo_plant_rep, seg_vec, seg_length, num_points, mode=0):
         ###########################################################
 
         spline_pnt_set.append(np.array(spline_pnt_set[-1]) +
-                              np.array(seg_vec)*distance_to_prev +
+                              np.array(new_seg_vec)*distance_to_prev +
                               np.array(vecpnt_offset))
-    spline_pnt_set.append(np.array(seg_vec)*seg_length)
 
     geo_plant_rep.tubePntSets.append(spline_pnt_set)
     geo_plant_rep.tubeSetLabels.append("Stem")
@@ -108,29 +129,18 @@ def GenRandSplineStem(geo_plant_rep, num_segs):
     prev_seg_idx = -1
     prev_end_pnt = [0, 0, 0]
     for seg_n in range(num_segs_rand):
-
-        ################# Randomisations ##########################
-        up_bias = np.random.normal(loc=STEMSEG_UPMUL_MEAN, scale=STEMSEG_UPMUL_VAR)
-
-        dx = np.random.normal(loc=STEMSEG_OUTRAD_MUL * np.sign(prev_end_pnt[0]),
-                              scale=STEMSEG_HORIZ_VAR)
-        dz = np.random.normal(loc=STEMSEG_OUTRAD_MUL * np.sign(prev_end_pnt[2]),
-                              scale=STEMSEG_HORIZ_VAR)
-        dy = np.sqrt(dx ** 2 + dz ** 2) * up_bias
-
-        length = np.random.normal(loc=STEMSEG_LENGTH_MEAN, scale=STEMSEG_LENGTH_VAR)
-        rand_num_spline_pts = max(round(np.random.normal(loc=STEMPNT_CNT_MEAN, scale=STEMPNT_CNT_VAR)), 0)
-        ###########################################################
-
-        seg_vec = [dx, dy, dz] / np.linalg.norm([dx, dy, dz], 2)
-        GenRandSplineSeg(geo_plant_rep, seg_vec, length, rand_num_spline_pts)
+        if prev_seg_idx == -1:
+            prev_end_vec = [0, 1, 0]
+        else:
+            prev_end_vec = geo_plant_rep.tubePntSets[prev_seg_idx][-1] - geo_plant_rep.tubePntSets[prev_seg_idx][-2]
+        prev_end_vec /= np.linalg.norm(prev_end_vec, 2)
+        GenRandSplineSeg(geo_plant_rep, prev_end_vec)
         geo_plant_rep.tubeConnIdxs.append(prev_seg_idx)
 
         ################# Randomisations ##########################
-        prev_seg_idx = round(((2 / 3) * np.random.rand() + 1 / 3) * (len(geo_plant_rep.tubePntSets) - 1))
+        biasrand_seg_idx = min(max(np.random.normal(loc=2/3, scale=1/3), 0), 1)
+        prev_seg_idx = round(biasrand_seg_idx * (len(geo_plant_rep.tubePntSets) - 1))
         ###########################################################
-
-        prev_end_pnt = geo_plant_rep.tubePntSets[prev_seg_idx][-1]
 
     geo_plant_rep.numTubeSets = num_segs_rand
     # generate stem radii
