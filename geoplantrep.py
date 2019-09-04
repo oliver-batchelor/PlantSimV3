@@ -28,12 +28,20 @@ class PlantData():
         """Loads plant data file from disk"""
         with open(filename, 'rb') as input:
             plant = pickle.load(input)
+
+            self.numTubeSets = len(plant.tubePntSets)
             self.tubePntSets = plant.tubePntSets
             self.tubeRadSets = plant.tubeRadSets
             self.tubeColSets = plant.tubeColSets
-            self.triMeshPntSets = plant.triPntSets
-            self.triMeshPntIndxSets = plant.triPntIndxSets
-            self.triMeshColSets = plant.triColSets
+            self.tubeConnIdxs = plant.tubeConnIdxs
+            self.tubeSetLabels = plant.tubeSetLabels
+
+            self.numMeshSets = len(plant.triMeshPntSets)
+            self.triMeshPntSets = plant.triMeshPntSets
+            self.triMeshPntIndxSets = plant.triMeshPntIndxSets
+            self.triMeshColSets = plant.triMeshColSets
+            self.triMeshConnIdxs = plant.triMeshConnIdxs
+            self.triMeshSetLabels = plant.triMeshSetLabels
 
 
     def SavePlantFile(self, filename):

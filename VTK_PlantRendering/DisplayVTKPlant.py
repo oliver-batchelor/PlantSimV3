@@ -1,5 +1,5 @@
 import vtk
-import ConvertToVTKPlant as CVVTK
+import VTK_PlantRendering.ConvertToVTKPlant as CVVTK
 from vtk.util.numpy_support import vtk_to_numpy
 import numpy as np
 

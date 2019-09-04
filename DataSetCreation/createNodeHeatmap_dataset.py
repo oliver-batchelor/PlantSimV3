@@ -1,6 +1,7 @@
 import geoplantrep as PG
-import DisplayVTKPlant as DP
-import imageProccessing as IP
+import VTK_PlantRendering.ConvertToVTKPlant as CVVTK
+import VTK_PlantRendering.DisplayVTKPlant as DP
+import DataSetCreation.imageProccessing as IP
 import vtk
 import numpy as np
 from tqdm import tqdm
@@ -9,21 +10,28 @@ from tqdm import tqdm
 INTERACT_WITH_PLANT = True
 
 LOCAL_HOME_PATH = '/local/'
-DIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/taller_samples_02_09_19/'
-PLANT_FILENAME = 'random_plant_V2_0.plant'
-OUTPUT_DIR = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/'
+DIR_PATH = LOCAL_HOME_PATH + ''
+PLANT_FILENAME = ''
+OUTPUT_DIR = LOCAL_HOME_PATH + ''
 
 
 rep_plant = PG.PlantData()
 rep_plant.LoadPlantFile(DIR_PATH + PLANT_FILENAME)
-vtk_plant = DP.plantVTKDataDisplay(rep_plant)
+
+# Display Plants
+vtk_plant = CVVTK.vtkPlantData(rep_plant)
 vtk_plant.ConstructVTKStem()
 vtk_plant.ConstructVTKMesh()
-vtk_plant.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=600, res_y=600 )
-vtk_plant.InitInteractor()
-vtk_plant.InitLighting()
 vtk_plant.CreatePolyDataMappers(disp_pot=True)
 vtk_plant.CreatePolyDataActors()
+vtk_plant.SetActorPostions()
+
+plant_display = DP.plantVTKDataDisplay(vtk_plant)
+plant_display.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=600, res_y=600 )
+plant_display.AddActors()
+plant_display.InitInteractor()
+plant_display.InitLighting()
+plant_display.RenderPlant()
 
 
 # Add red spheres at node points
