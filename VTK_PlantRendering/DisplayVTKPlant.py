@@ -4,10 +4,25 @@ from vtk.util.numpy_support import vtk_to_numpy
 import numpy as np
 
 
+POT_SIZE = 0.08
+
+TOP_LIGHT_INTENS_MEAN = 0.3
+BOT_LIGHT_INTENS_MEAN = 0.08
+LIGHT_INTENS_VAR = 0.03
+
+SHADOWS_RESOLUTION = 1000
+
+
 class plantVTKDataDisplay():
     """Class controlling render environment and interactors"""
-    def __init__(self, vtk_represenation):
-        self.vtk_plant_rep = vtk_represenation
+    def __init__(self, plant_list):
+        self.vtk_plant_list = plant_list
+
+        self.BackgroundOriPoses = []
+        self.BackgroundPolydataList = []
+        self.BackgroundMapperList = []
+        self.BackgroundActorList = []
+
         self.renderWindow = None
         self.renderer = None
         self.bakerPass = None
@@ -22,7 +37,7 @@ class plantVTKDataDisplay():
         cameraP = vtk.vtkCameraPass()
         opaque = vtk.vtkOpaquePass()
         peeling = vtk.vtkDepthPeelingPass()
-        peeling.SetMaximumNumberOfPeels(500)
+        peeling.SetMaximumNumberOfPeels(100)
         peeling.SetOcclusionRatio(0.1)
 
         translucent = vtk.vtkTranslucentPass()
@@ -44,7 +59,7 @@ class plantVTKDataDisplay():
 
         shadowsBaker = vtk.vtkShadowMapBakerPass()
         shadowsBaker.SetOpaqueSequence(opaqueCameraPass)
-        shadowsBaker.SetResolution(2048)
+        shadowsBaker.SetResolution(SHADOWS_RESOLUTION)
 
         shadows = vtk.vtkShadowMapPass()
         shadows.SetShadowMapBakerPass(shadowsBaker)
@@ -102,12 +117,12 @@ class plantVTKDataDisplay():
 
         if mode == 0:
             light_corner_pos = np.array([-2, 2.5, -2])
-            intensity = 0.3
+            intensity = TOP_LIGHT_INTENS_MEAN
             for n in range(2):
                 for light_idx in range(9):
                     light_array.append(vtk.vtkLight())
                     light_array[-1].SetLightTypeToSceneLight()
-                    light_array[-1].SetIntensity(intensity)
+                    light_array[-1].SetIntensity(np.random.normal(loc=intensity, scale=LIGHT_INTENS_VAR))
                     light_array[-1].SetPosition(light_corner_pos[0], light_corner_pos[1], light_corner_pos[2])
                     light_array[-1].SetPositional(True)
                     light_array[-1].SetConeAngle(36)
@@ -118,7 +133,7 @@ class plantVTKDataDisplay():
                     light_corner_pos = light_corner_pos + [((light_idx + 1) % 3 == 0 and light_idx > 0) * 2, 0,
                                                            2 - ((light_idx + 1) % 3 == 0 and light_idx > 0) * 6]
                 light_corner_pos = np.array([-2, -2, -2])
-                intensity = 0.1
+                intensity = BOT_LIGHT_INTENS_MEAN
         elif mode == 1:
             light_array.append(vtk.vtkLight())
             light_array[-1].SetLightTypeToSceneLight()
@@ -136,14 +151,36 @@ class plantVTKDataDisplay():
             self.renderer.AddLight(light)
 
 
+    def InitBackground(self, disp_pots=False):
+        """Create randomised background"""
+        if disp_pots:
+            for plant in self.vtk_plant_list:
+                plant_bag = vtk.vtkCubeSource()
+                plant_pos = plant.StemActorList[0].GetPosition()
+                plant_bag.SetCenter(plant_pos[0], -POT_SIZE / 2 + plant_pos[1], plant_pos[2])
+                plant_bag.SetXLength(POT_SIZE)
+                plant_bag.SetYLength(POT_SIZE)
+                plant_bag.SetZLength(POT_SIZE)
+                plant_bag.Update()
+                plant_bag_mapper = vtk.vtkPolyDataMapper()
+                plant_bag_mapper.SetInputData(plant_bag.GetOutput())
+                self.BackgroundPolydataList.append(plant_bag)
+                self.BackgroundMapperList.append(plant_bag_mapper)
+        for idx, mapper in enumerate(self.BackgroundMapperList):
+            poly_actor = vtk.vtkActor()
+            poly_actor.SetMapper(mapper)
+            self.BackgroundActorList.append(poly_actor)
+
+
     def AddActors(self):
         """Adds all actors to renderer"""
-        for actor in self.vtk_plant_rep.StemActorList:
-            self.renderer.AddActor(actor)
-        for actor in self.vtk_plant_rep.MeshActorList:
-            self.renderer.AddActor(actor)
-        for actor in self.vtk_plant_rep.BackgroundActorList:
-            self.renderer.AddActor(actor)
+        for plant in self.vtk_plant_list:
+            for actor in plant.StemActorList:
+                self.renderer.AddActor(actor)
+            for actor in plant.MeshActorList:
+                self.renderer.AddActor(actor)
+        for background_obj in self.BackgroundActorList:
+            self.renderer.AddActor(background_obj)
 
 
     def InitInteractor(self):
@@ -155,7 +192,7 @@ class plantVTKDataDisplay():
 
     def SetPlantVisible(self, show_actors):
         """Shows/Hides plant actors"""
-        for actor in (self.vtk_plant_rep.StemActorList + self.vtk_plant_rep.MeshActorList):
+        for actor in (self.vtk_plant_list[0].StemActorList + self.vtk_plant_list[0].MeshActorList):
             actor.SetVisibility(show_actors)
         self.renderWindow.Render()
 

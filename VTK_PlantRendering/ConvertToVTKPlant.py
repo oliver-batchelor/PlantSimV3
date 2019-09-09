@@ -4,9 +4,6 @@ import geoplantrep as PG
 import numpy as np
 
 
-POT_SIZE = 0.08
-
-
 class vtkPlantData():
     """Class containing functions needed to convert geoplantrep. into vtk data"""
     def __init__(self, plant_data_representation):
@@ -21,11 +18,17 @@ class vtkPlantData():
         self.MeshMapperList = []
         self.MeshActorList = []
 
-        self.BackgroundOriPoses = []
-        self.BackgroundPolydataList = []
-        self.BackgroundMapperList = []
-        self.BackgroundActorList = []
         self.vtkObjects = []
+
+
+    def BuildComponents(self):
+        """Builds the components of the plant, does not set global actor positions"""
+        self.ConstructVTKStem()
+        self.ConstructVTKMesh()
+        self.UpdateNormals()
+        self.CreatePolyDataMappers()
+        self.CreatePolyDataActors()
+
 
     def ConstructVTKStem(self):
         """Build vtk spline tubes around stem points"""
@@ -131,8 +134,15 @@ class vtkPlantData():
             set_polydata.SetPoints(mesh_points)
             set_polydata.SetPolys(mesh_triangles)
             set_polydata.GetPointData().SetScalars(set_cols)
-            self.MeshPolydataList.append(set_polydata)
-            self.vtkObjects.extend([mesh_points, mesh_triangles, set_cols])
+
+            smooth_filter = vtk.vtkSmoothPolyDataFilter()
+            smooth_filter.SetInputData(set_polydata)
+            smooth_filter.FeatureEdgeSmoothingOn()
+            smooth_filter.BoundarySmoothingOn()
+            smooth_filter.Update()
+
+            self.MeshPolydataList.append(smooth_filter.GetOutput())
+            self.vtkObjects.extend([set_polydata, mesh_points, mesh_triangles, set_cols])
 
 
     def UpdateNormals(self):
@@ -153,7 +163,7 @@ class vtkPlantData():
             self.MeshNormalsList.append(normal_filter.GetOutput())
 
 
-    def CreatePolyDataMappers(self, disp_pot=False):
+    def CreatePolyDataMappers(self):
         """Sets up all the mappers to map stem polydata objects to the stemactors"""
         for stem_data in self.StemNormalsList:
             poly_mapper = vtk.vtkPolyDataMapper()
@@ -170,17 +180,6 @@ class vtkPlantData():
             poly_mapper.SetScalarRange(0, 255)
             poly_mapper.SelectColorArray("Colors")
             self.MeshMapperList.append(poly_mapper)
-        if disp_pot:
-            plant_bag = vtk.vtkCubeSource()
-            plant_bag.SetCenter(0, -POT_SIZE / 2, 0)
-            plant_bag.SetXLength(POT_SIZE)
-            plant_bag.SetYLength(POT_SIZE)
-            plant_bag.SetZLength(POT_SIZE)
-            plant_bag.Update()
-            plant_bag_mapper = vtk.vtkPolyDataMapper()
-            plant_bag_mapper.SetInputData(plant_bag.GetOutput())
-            self.BackgroundPolydataList.append(plant_bag)
-            self.BackgroundMapperList.append(plant_bag_mapper)
 
 
     def CreatePolyDataActors(self):
@@ -193,17 +192,13 @@ class vtkPlantData():
             poly_actor = vtk.vtkActor()
             poly_actor.SetMapper(mapper)
             self.MeshActorList.append(poly_actor)
-        for idx, mapper in enumerate(self.BackgroundMapperList):
-            poly_actor = vtk.vtkActor()
-            poly_actor.SetMapper(mapper)
-            self.BackgroundActorList.append(poly_actor)
 
 
-    def SetActorPostions(self):
+    def SetActorPostions(self, offset=[0, 0, 0]):
         """Set all actor origin positions on the fly based on lower stem segment vectors"""
         stem_end_positions = np.zeros((self.plant_data.numTubeSets, 3))
         for idx, actor in enumerate(self.StemActorList):
-            actor_origin_pos = [0, 0, 0]
+            actor_origin_pos = offset
             # Sum all stem vectors of lower connections
             prev_seg_idx = self.plant_data.tubeConnIdxs[idx]
             while (prev_seg_idx != -1):
