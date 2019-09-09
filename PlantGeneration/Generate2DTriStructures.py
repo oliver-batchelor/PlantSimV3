@@ -3,12 +3,12 @@ import numpy as np
 import math
 import vtk
 
-LEAF_G_MEAN = 0.9
-LEAF_G_VAR = 0.1
-LEAF_R_MEAN = 0.5
-LEAF_R_VAR = 0.05
-LEAF_B_MEAN = 0.3
-LEAF_B_VAR = 0.02
+LEAF_G_MEAN = 0.6
+LEAF_G_VAR = 0.05
+LEAF_R_MEAN = 0.4
+LEAF_R_VAR = 0.04
+LEAF_B_MEAN = 0.25
+LEAF_B_VAR = 0.03
 
 LEAF_LENGTH_MEAN = 0.08
 LEAF_LENGTH_VAR = 0.02
@@ -30,7 +30,7 @@ LEAFCOL_MAX_ITTS = 80
 #TODO: make fully vtk free triangle intersection detector
 
 
-def PartCollisionCheck(leaf_tri_pnts, leaf_tri_indcs, part_tri_pnts, part_tri_indcs):
+def TriCollisionCheck(leaf_tri_pnts, leaf_tri_indcs, part_tri_pnts, part_tri_indcs):
     """Scan through part given and find intersections with leaf triangles"""
     collision = False
     for leaf_tri in leaf_tri_indcs:
@@ -45,15 +45,26 @@ def PartCollisionCheck(leaf_tri_pnts, leaf_tri_indcs, part_tri_pnts, part_tri_in
     return collision
 
 
+def SplineTriCollisionCheck():
+    """Scan tube point splines for intersection with triangles"""
+
+
+
 def ScanForIntersection(geo_plant_rep, leaf_tri_pnts, leaf_tri_indcs):
     """Scan through plant part list and Check for intersections"""
 
     collision = False
     for idx in range(geo_plant_rep.numMeshSets):
-        if PartCollisionCheck(leaf_tri_pnts, leaf_tri_indcs,
+        if TriCollisionCheck(leaf_tri_pnts, leaf_tri_indcs,
                            geo_plant_rep.meshPntSets[idx], geo_plant_rep.triMeshPntIndxSets[idx]):
             collision = True
             break
+    if not collision:
+        for idx in range(geo_plant_rep.numTubeSets):
+            if SplineTriCollisionCheck():
+                collision = True
+                break
+
     return collision
 
 

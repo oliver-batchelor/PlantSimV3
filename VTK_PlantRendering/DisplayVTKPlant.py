@@ -10,25 +10,77 @@ class plantVTKDataDisplay():
         self.vtk_plant_rep = vtk_represenation
         self.renderWindow = None
         self.renderer = None
+        self.bakerPass = None
         self.windowInteractor = None
         self.windowFilter = None
         self.camera = None
         self.writer = None
 
 
+    def InitRenderPasses(self):
+        """Initiate and add realism passes to renderer"""
+        cameraP = vtk.vtkCameraPass()
+        opaque = vtk.vtkOpaquePass()
+        peeling = vtk.vtkDepthPeelingPass()
+        peeling.SetMaximumNumberOfPeels(500)
+        peeling.SetOcclusionRatio(0.1)
+
+        translucent = vtk.vtkTranslucentPass()
+        peeling.SetTranslucentPass(translucent)
+
+        volume = vtk.vtkVolumetricPass()
+        overlay = vtk.vtkOverlayPass()
+
+        lights = vtk.vtkLightsPass()
+        opaqueSequence = vtk.vtkSequencePass()
+
+        passes2 = vtk.vtkRenderPassCollection()
+        passes2.AddItem(lights)
+        passes2.AddItem(opaque)
+        opaqueSequence.SetPasses(passes2)
+
+        opaqueCameraPass = vtk.vtkCameraPass()
+        opaqueCameraPass.SetDelegatePass(opaqueSequence)
+
+        shadowsBaker = vtk.vtkShadowMapBakerPass()
+        shadowsBaker.SetOpaqueSequence(opaqueCameraPass)
+        shadowsBaker.SetResolution(2048)
+
+        shadows = vtk.vtkShadowMapPass()
+        shadows.SetShadowMapBakerPass(shadowsBaker)
+        shadows.SetOpaqueSequence(opaqueSequence)
+
+        seq = vtk.vtkSequencePass()
+        passes = vtk.vtkRenderPassCollection()
+        passes.AddItem(shadowsBaker)
+        passes.AddItem(shadows)
+        passes.AddItem(lights)
+        passes.AddItem(peeling)
+        passes.AddItem(volume)
+        passes.AddItem(overlay)
+        seq.SetPasses(passes)
+        cameraP.SetDelegatePass(seq)
+
+        self.renderer.SetPass(cameraP)
+
+
     def InitRenderWindow(self, stereo_on=False, axes_on=False, bkgnd=[0.8, 0.8, 0.8], res_x=600, res_y=600):
         """Sets up the visualisation environment"""
-        self.renderer = vtk.vtkRenderer()
+        self.renderer = vtk.vtkOpenGLRenderer()
         self.renderWindow = vtk.vtkRenderWindow()
         self.renderWindow.SetStereoCapableWindow(stereo_on)
         self.renderWindow.SetStereoRender(stereo_on)
         self.renderWindow.SetStereoTypeToSplitViewportHorizontal()
         self.renderWindow.AddRenderer(self.renderer)
+        self.renderWindow.SetMultiSamples(0)
+        self.renderWindow.SetAlphaBitPlanes(1)
 
         self.renderer.SetBackground(bkgnd)
         self.renderWindow.SetSize(res_x, res_y)
         self.renderer.ResetCamera()
         self.renderer.GetActiveCamera().Zoom(1)
+
+        self.InitRenderPasses()
 
         axes = vtk.vtkAxesActor()
         axes.SetConeRadius(0.15)
@@ -44,27 +96,40 @@ class plantVTKDataDisplay():
         self.writer.SetInputConnection(self.windowFilter.GetOutputPort())
 
 
-    def InitLighting(self):
+    def InitLighting(self, mode=0):
         """Sets up lights in scene- default is even overhead lighting (glasshouse)"""
         light_array = []
-        light_corner_pos = np.array([-2, 2, -2])
-        intensity = 0.25
-        for n in range(2):
-            for light_idx in range(9):
-                light_array.append(vtk.vtkLight())
-                light_array[-1].SetLightTypeToSceneLight()
-                light_array[-1].SetIntensity(intensity)
-                light_array[-1].SetPosition(light_corner_pos[0], light_corner_pos[1], light_corner_pos[2])
-                light_array[-1].SetPositional(True)
-                light_array[-1].SetConeAngle(60)
-                light_array[-1].SetFocalPoint(0, 0, 0)
-                light_array[-1].SetDiffuseColor(1, 1, 0.984)
-                light_array[-1].SetAmbientColor(1, 1, 0.984)
-                light_array[-1].SetSpecularColor(1, 1, 0.984)
-                light_corner_pos = light_corner_pos + [((light_idx + 1) % 3 == 0 and light_idx > 0) * 2, 0,
-                                                       2 - ((light_idx + 1) % 3 == 0 and light_idx > 0) * 6]
-            light_corner_pos = np.array([-2, -2, -2])
-            intensity = 0.1
+
+        if mode == 0:
+            light_corner_pos = np.array([-2, 2.5, -2])
+            intensity = 0.3
+            for n in range(2):
+                for light_idx in range(9):
+                    light_array.append(vtk.vtkLight())
+                    light_array[-1].SetLightTypeToSceneLight()
+                    light_array[-1].SetIntensity(intensity)
+                    light_array[-1].SetPosition(light_corner_pos[0], light_corner_pos[1], light_corner_pos[2])
+                    light_array[-1].SetPositional(True)
+                    light_array[-1].SetConeAngle(36)
+                    light_array[-1].SetFocalPoint(0, 2, 0)
+                    light_array[-1].SetDiffuseColor(1, 1, 0.984)
+                    light_array[-1].SetAmbientColor(1, 1, 0.984)
+                    light_array[-1].SetSpecularColor(1, 1, 0.984)
+                    light_corner_pos = light_corner_pos + [((light_idx + 1) % 3 == 0 and light_idx > 0) * 2, 0,
+                                                           2 - ((light_idx + 1) % 3 == 0 and light_idx > 0) * 6]
+                light_corner_pos = np.array([-2, -2, -2])
+                intensity = 0.1
+        elif mode == 1:
+            light_array.append(vtk.vtkLight())
+            light_array[-1].SetLightTypeToSceneLight()
+            light_array[-1].SetIntensity(1)
+            light_array[-1].SetPosition(0, 5, 0)
+            light_array[-1].SetPositional(True)
+            light_array[-1].SetConeAngle(30)
+            light_array[-1].SetFocalPoint(0, 4, 0)
+            light_array[-1].SetDiffuseColor(1, 1, 0.984)
+            light_array[-1].SetAmbientColor(1, 1, 0.984)
+            light_array[-1].SetSpecularColor(1, 1, 0.984)
 
         self.renderer.RemoveAllLights()
         for light in light_array:

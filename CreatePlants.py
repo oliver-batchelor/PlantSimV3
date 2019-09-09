@@ -30,7 +30,7 @@ if LOAD_PLANT:
     rep_plant.LoadPlantFile('test_save.plant')
 else:
     # Generate Randomised plant using a combination of algorithms
-    GStem.GenRandSplineStem(rep_plant, 20)
+    GStem.GenRandSplineStem(rep_plant, 50)
     end_stem_indxs = GStem.FindEndSegIndxs(rep_plant)
     G2D.GenRandLeaves(rep_plant, end_stem_indxs)
     #G3D.GenRandFruit(rep_plant)
@@ -40,6 +40,7 @@ else:
 vtk_plant = CVVTK.vtkPlantData(rep_plant)
 vtk_plant.ConstructVTKStem()
 vtk_plant.ConstructVTKMesh()
+vtk_plant.UpdateNormals()
 vtk_plant.CreatePolyDataMappers(disp_pot=True)
 vtk_plant.CreatePolyDataActors()
 vtk_plant.SetActorPostions()
@@ -48,7 +49,7 @@ plant_display = DP.plantVTKDataDisplay(vtk_plant)
 plant_display.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=1920, res_y=1080 )
 plant_display.AddActors()
 plant_display.InitInteractor()
-plant_display.InitLighting()
+plant_display.InitLighting(mode=0)
 plant_display.RenderPlant()
 
 if SAVE_PLANT:

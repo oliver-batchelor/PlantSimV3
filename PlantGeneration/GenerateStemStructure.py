@@ -3,10 +3,10 @@ import numpy as np
 
 STEMSEG_CNT_VAR = 3
 STEMSEG_LENGTH_MEAN = 0.04
-STEMSEG_LENGTH_VAR = 0.02
+STEMSEG_LENGTH_VAR = 0.03
 STEMSEG_UPMUL_MEAN = 1.6
 STEMSEG_UPMUL_VAR = 0.6
-STEMSEG_HORIZ_VAR = 1.8
+STEMSEG_HORIZ_VAR = 3
 STEMSEG_OUTRAD_MUL = 0.0005
 
 STEMPNT_CNT_MEAN = 2
@@ -45,7 +45,7 @@ def GenRandStemRadii(geo_plant_rep, mode=0):
         spline_rad_set = []
 
         for point_n in range(len(seg_points)):
-            rad_mul = 1 + 2*(geo_plant_rep.numTubeSets - stemseg_idx)*STEMSEG_LENGTH_MEAN
+            rad_mul = 1 + 0.25*np.sqrt(geo_plant_rep.numTubeSets - stemseg_idx) + 0.04*point_n
             ################# Randomisations ##########################
             pnt_rad = min(max(STEMTIPS_RAD*rad_mul, STEMRAD_MIN)  + rad_mul*np.random.normal(scale=STEMRAD_RAD_VAR), STEMRAD_MAX)
             ###########################################################

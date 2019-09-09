@@ -13,9 +13,11 @@ class vtkPlantData():
         self.plant_data = plant_data_representation
 
         self.StemPolydataList = []
+        self.StemNormalsList = []
         self.StemMapperList = []
         self.StemActorList = []
         self.MeshPolydataList = []
+        self.MeshNormalsList = []
         self.MeshMapperList = []
         self.MeshActorList = []
 
@@ -87,7 +89,7 @@ class vtkPlantData():
 
             # Create the tubes and spheres
             tuber = vtk.vtkTubeFilter()
-            tuber.SetNumberOfSides(round(np.random.rand()*4) + 6)
+            tuber.SetNumberOfSides(round(np.random.rand()*6) + 8)
             tuber.SetInputData(tubePolyData)
             tuber.SetVaryRadiusToVaryRadiusByAbsoluteScalar()
             tuber.CappingOn()
@@ -132,9 +134,28 @@ class vtkPlantData():
             self.MeshPolydataList.append(set_polydata)
             self.vtkObjects.extend([mesh_points, mesh_triangles, set_cols])
 
+
+    def UpdateNormals(self):
+        """Updates all objects normals"""
+        for stem_data in self.StemPolydataList:
+            normal_filter = vtk.vtkPolyDataNormals()
+            normal_filter.SetComputeCellNormals(1)
+            normal_filter.SetComputePointNormals(1)
+            normal_filter.SetInputData(stem_data)
+            normal_filter.Update()
+            self.StemNormalsList.append(normal_filter.GetOutput())
+        for mesh_data in self.MeshPolydataList:
+            normal_filter = vtk.vtkPolyDataNormals()
+            normal_filter.SetComputeCellNormals(1)
+            normal_filter.SetComputePointNormals(1)
+            normal_filter.SetInputData(mesh_data)
+            normal_filter.Update()
+            self.MeshNormalsList.append(normal_filter.GetOutput())
+
+
     def CreatePolyDataMappers(self, disp_pot=False):
         """Sets up all the mappers to map stem polydata objects to the stemactors"""
-        for stem_data in self.StemPolydataList:
+        for stem_data in self.StemNormalsList:
             poly_mapper = vtk.vtkPolyDataMapper()
             poly_mapper.ScalarVisibilityOn()
             poly_mapper.SetScalarModeToUsePointFieldData()
@@ -142,7 +163,7 @@ class vtkPlantData():
             poly_mapper.SetInputData(stem_data)
             poly_mapper.SetScalarRange(stem_data.GetScalarRange())
             self.StemMapperList.append(poly_mapper)
-        for set_idx, mesh_data in enumerate(self.MeshPolydataList):
+        for set_idx, mesh_data in enumerate(self.MeshNormalsList):
             poly_mapper = vtk.vtkPolyDataMapper()
             poly_mapper.SetInputData(mesh_data)
             poly_mapper.SetScalarModeToUsePointFieldData()
