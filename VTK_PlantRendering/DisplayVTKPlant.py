@@ -3,9 +3,6 @@ import VTK_PlantRendering.ConvertToVTKPlant as CVVTK
 from vtk.util.numpy_support import vtk_to_numpy
 import numpy as np
 
-
-POT_SIZE = 0.08
-
 TOP_LIGHT_INTENS_MEAN = 0.3
 BOT_LIGHT_INTENS_MEAN = 0.08
 LIGHT_INTENS_VAR = 0.03
@@ -17,11 +14,6 @@ class plantVTKDataDisplay():
     """Class controlling render environment and interactors"""
     def __init__(self, plant_list):
         self.vtk_plant_list = plant_list
-
-        self.BackgroundOriPoses = []
-        self.BackgroundPolydataList = []
-        self.BackgroundMapperList = []
-        self.BackgroundActorList = []
 
         self.renderWindow = None
         self.renderer = None
@@ -151,36 +143,15 @@ class plantVTKDataDisplay():
             self.renderer.AddLight(light)
 
 
-    def InitBackground(self, disp_pots=False):
-        """Create randomised background"""
-        if disp_pots:
-            for plant in self.vtk_plant_list:
-                plant_bag = vtk.vtkCubeSource()
-                plant_pos = plant.StemActorList[0].GetPosition()
-                plant_bag.SetCenter(plant_pos[0], -POT_SIZE / 2 + plant_pos[1], plant_pos[2])
-                plant_bag.SetXLength(POT_SIZE)
-                plant_bag.SetYLength(POT_SIZE)
-                plant_bag.SetZLength(POT_SIZE)
-                plant_bag.Update()
-                plant_bag_mapper = vtk.vtkPolyDataMapper()
-                plant_bag_mapper.SetInputData(plant_bag.GetOutput())
-                self.BackgroundPolydataList.append(plant_bag)
-                self.BackgroundMapperList.append(plant_bag_mapper)
-        for idx, mapper in enumerate(self.BackgroundMapperList):
-            poly_actor = vtk.vtkActor()
-            poly_actor.SetMapper(mapper)
-            self.BackgroundActorList.append(poly_actor)
-
-
-    def AddActors(self):
+    def AddActors(self, bckgnd_actors=[]):
         """Adds all actors to renderer"""
         for plant in self.vtk_plant_list:
             for actor in plant.StemActorList:
                 self.renderer.AddActor(actor)
             for actor in plant.MeshActorList:
                 self.renderer.AddActor(actor)
-        for background_obj in self.BackgroundActorList:
-            self.renderer.AddActor(background_obj)
+        for bckgnd_a in bckgnd_actors:
+            self.renderer.AddActor(bckgnd_a)
 
 
     def InitInteractor(self):

@@ -1,6 +1,7 @@
 import geoplantrep as PG
 import VTK_PlantRendering.ConvertToVTKPlant as CVVTK
 import VTK_PlantRendering.DisplayVTKPlant as DP
+import VTK_PlantRendering.GenerateBackground as BG
 import PlantGeneration.GenerateStemStructure as GStem
 import PlantGeneration.Generate2DTriStructures as G2D
 import PlantGeneration.Generate3DTriStructures as G3D
@@ -46,14 +47,15 @@ else:
 
             vtk_plant = CVVTK.vtkPlantData(rep_plant)
             vtk_plant.BuildComponents()
-            vtk_plant.SetActorPostions(offset=[0.2 * plant_c, 0, 0.2 * plant_r])
+            vtk_plant.SetActorPostions(offset=[0.6 * plant_r, 0, 0.2 * plant_c])
             vtk_plant_list.append(vtk_plant)
 
 
 plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
 plant_display.InitRenderWindow( axes_on=False, bkgnd=[0.8, 0.8, 0.8], res_x=1920, res_y=1080 )
-plant_display.InitBackground(disp_pots=True)
-plant_display.AddActors()
+bkgnd_scene = BG.BackgroundScene()
+bkgnd_scene.GeneratePlantPots(vtk_plant_list)
+plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
 plant_display.InitInteractor()
 plant_display.InitLighting(mode=0)
 plant_display.RenderPlant()
