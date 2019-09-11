@@ -7,8 +7,7 @@ TOP_LIGHT_INTENS_MEAN = 0.3
 BOT_LIGHT_INTENS_MEAN = 0.08
 LIGHT_INTENS_VAR = 0.03
 
-SHADOWS_RESOLUTION = 1000
-
+SHADOW_RENDER_RES = 4096
 
 class plantVTKDataDisplay():
     """Class controlling render environment and interactors"""
@@ -22,6 +21,11 @@ class plantVTKDataDisplay():
         self.windowFilter = None
         self.camera = None
         self.writer = None
+
+
+    def ClearRenderer(self):
+        """Removes all actors from renderer"""
+        self.renderer.RemoveAllViewProps()
 
 
     def InitRenderPasses(self):
@@ -51,7 +55,7 @@ class plantVTKDataDisplay():
 
         shadowsBaker = vtk.vtkShadowMapBakerPass()
         shadowsBaker.SetOpaqueSequence(opaqueCameraPass)
-        shadowsBaker.SetResolution(SHADOWS_RESOLUTION)
+        shadowsBaker.SetResolution(SHADOW_RENDER_RES)
 
         shadows = vtk.vtkShadowMapPass()
         shadows.SetShadowMapBakerPass(shadowsBaker)
@@ -168,9 +172,9 @@ class plantVTKDataDisplay():
         self.renderWindow.Render()
 
 
-    def SetBackgroundVisible(self, show_actors):
+    def SetActorsVisible(self, actors_list, show_actors):
         """Shows/Hides plant actors"""
-        for actor in self.vtk_plant_rep.BackgroundActorList:
+        for actor in actors_list:
             actor.SetVisibility(show_actors)
         self.renderWindow.Render()
 

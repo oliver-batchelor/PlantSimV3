@@ -2,45 +2,44 @@ import geoplantrep as PG
 import VTK_PlantRendering.ConvertToVTKPlant as CVVTK
 import VTK_PlantRendering.DisplayVTKPlant as DP
 import DataSetCreation.imageProccessing as IP
+import VTK_PlantRendering.GenerateBackground as BG
 import vtk
 import numpy as np
 from tqdm import tqdm
 
 
-INTERACT_WITH_PLANT = True
-
 LOCAL_HOME_PATH = '/local/'
-DIR_PATH = LOCAL_HOME_PATH + ''
-PLANT_FILENAME = ''
-OUTPUT_DIR = LOCAL_HOME_PATH + ''
+PLANTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/V3Plants/'
+OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/plant_HM_dataset_10_09_19/'
 
+
+INTERACT_WITH_PLANT = False
 
 rep_plant = PG.PlantData()
-rep_plant.LoadPlantFile(DIR_PATH + PLANT_FILENAME)
+vtk_plant_list = []
 
-# Display Plants
+rep_plant = PG.PlantData()
+rep_plant.LoadPlantFile(PLANTDIR_PATH + '10_09_19_' + str(20) + '.plant')
 vtk_plant = CVVTK.vtkPlantData(rep_plant)
-vtk_plant.ConstructVTKStem()
-vtk_plant.ConstructVTKMesh()
-vtk_plant.CreatePolyDataMappers(disp_pot=True)
-vtk_plant.CreatePolyDataActors()
+vtk_plant.BuildComponents()
 vtk_plant.SetActorPostions()
+vtk_plant_list.append(vtk_plant)
 
-plant_display = DP.plantVTKDataDisplay(vtk_plant)
+plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
 plant_display.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=600, res_y=600 )
-plant_display.AddActors()
+bkgnd_scene = BG.BackgroundScene()
+bkgnd_scene.GeneratePlantPots(vtk_plant_list)
+plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
 plant_display.InitInteractor()
-plant_display.InitLighting()
-plant_display.RenderPlant()
-
+plant_display.InitLighting(mode=0)
 
 # Add red spheres at node points
 annotation_actors = []
 annotation_mappers = []
 annotation_objects = []
-for stem_seg_points in rep_plant.tubePntSets:
+for stem_seg_actor in vtk_plant.StemActorList:
     stem_base_node = vtk.vtkSphereSource()
-    stem_base_node.SetCenter(stem_seg_points[0])
+    stem_base_node.SetCenter(stem_seg_actor.GetPosition())
     stem_base_node.SetRadius(0.001)
     stem_base_node.Update()
     annotation_objects.append(stem_base_node)
@@ -52,26 +51,28 @@ for stem_seg_points in rep_plant.tubePntSets:
     stem_base_actor.GetProperty().SetColor((1, 0, 0))
     stem_base_actor.VisibilityOff()
     annotation_actors.append(stem_base_actor)
-    vtk_plant.renderer.AddActor(stem_base_actor)
+    plant_display.renderer.AddActor(stem_base_actor)
 
 if INTERACT_WITH_PLANT:
-    vtk_plant.RenderPlant()
+    plant_display.RenderPlant()
 else:
-    vtk_plant.renderWindow.OffScreenRenderingOn()
-    for image_num in tqdm(range(0, 5)):
+    plant_display.renderWindow.OffScreenRenderingOn()
+    for image_num in tqdm(range(1800, 2000)):
         # Show plant and save image
-        vtk_plant.SetPlantVisible(True)
-        for ann_actor in annotation_actors:
-            ann_actor.VisibilityOff()
-        vtk_plant.SaveCameraImage(OUTPUT_DIR, 'test/', str(image_num))
+        plant_display.SetPlantVisible(True)
+        plant_display.SetActorsVisible(bkgnd_scene.BackgroundActorList, True)
+        plant_display.SetActorsVisible(annotation_actors, False)
+
+        plant_display.SaveCameraImage(OUTDIR_PATH, 'train/', str(image_num))
 
         # Hide plant, display annotations, save image
-        vtk_plant.SetPlantVisible( False )
-        for ann_actor in annotation_actors:
-            ann_actor.VisibilityOn()
-        vtk_plant.SaveCameraImage(OUTPUT_DIR, 'test/', 'a' + str(image_num))
+        plant_display.SetPlantVisible( False )
+        plant_display.SetActorsVisible(bkgnd_scene.BackgroundActorList, False)
+        plant_display.SetActorsVisible(annotation_actors, True)
 
-        IP.pyrDownSmple(OUTPUT_DIR + 'test/a' + str(image_num) + '.jpg')
+        plant_display.SaveCameraImage(OUTDIR_PATH, 'train/', 'a' + str(image_num))
+
+        IP.pyrDownSmple(OUTDIR_PATH + 'train/a' + str(image_num) + '.jpg')
 
         # Move camera
-        vtk_plant.MoveCamera(1 - 2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3))
+        plant_display.MoveCamera(1 - 2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3))

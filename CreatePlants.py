@@ -18,7 +18,7 @@ import PlantGeneration.Generate3DTriStructures as G3D
 
 
 LOCAL_HOME_PATH = '/local/'
-OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/'
+OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/V3Plants/'
 
 
 DISPLAY_PLANT_SAMPLES = True
@@ -28,37 +28,40 @@ SAVE_PLANT = False
 rep_plant = PG.PlantData()
 vtk_plant_list = []
 
-if LOAD_PLANT:
-    rep_plant = PG.PlantData()
-    rep_plant.LoadPlantFile('test_save.plant')
-    vtk_plant = CVVTK.vtkPlantData(rep_plant)
-    vtk_plant.BuildComponents()
-    vtk_plant.SetActorPostions()
-    vtk_plant_list.append(vtk_plant)
-else:
-    for plant_c in range(6):
-        for plant_r in range(2):
-            # Generate Randomised plant using a combination of algorithms
-            rep_plant = PG.PlantData()
-            GStem.GenRandSplineStem(rep_plant, 30)
-            end_stem_indxs = GStem.FindEndSegIndxs(rep_plant)
-            G2D.GenRandLeaves(rep_plant, end_stem_indxs)
-            #G3D.GenRandFruit(rep_plant)
+for plant_n in range(1):
+    if LOAD_PLANT:
+        rep_plant = PG.PlantData()
+        rep_plant.LoadPlantFile(OUTDIR_PATH + '10_09_19_' + str(plant_n) + '.plant')
+        vtk_plant = CVVTK.vtkPlantData(rep_plant)
+        vtk_plant.BuildComponents()
+        vtk_plant.SetActorPostions()
+        vtk_plant_list.append(vtk_plant)
+    else:
+        for plant_c in range(3):
+            for plant_r in range(2):
+                # Generate Randomised plant using a combination of algorithms
+                rep_plant = PG.PlantData()
+                GStem.GenRandSplineStem(rep_plant, 30)
+                end_stem_indxs = GStem.FindEndSegIndxs(rep_plant)
+                G2D.GenRandLeaves(rep_plant, end_stem_indxs)
+                #G3D.GenRandFruit(rep_plant)
 
-            vtk_plant = CVVTK.vtkPlantData(rep_plant)
-            vtk_plant.BuildComponents()
-            vtk_plant.SetActorPostions(offset=[0.6 * plant_r, 0, 0.2 * plant_c])
-            vtk_plant_list.append(vtk_plant)
+                vtk_plant = CVVTK.vtkPlantData(rep_plant)
+                vtk_plant.BuildComponents()
+                vtk_plant.SetActorPostions(offset=[0.6 * plant_r, 0, 0.2 * plant_c])
+                vtk_plant_list.append(vtk_plant)
 
+    if DISPLAY_PLANT_SAMPLES:
+        plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
+        plant_display.InitRenderWindow( axes_on=False, bkgnd=[0.8, 0.8, 0.8], res_x=1920, res_y=1080 )
+        bkgnd_scene = BG.BackgroundScene()
+        bkgnd_scene.GeneratePlantPots(vtk_plant_list)
+        plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
+        plant_display.InitInteractor()
+        plant_display.InitLighting(mode=0)
+        plant_display.RenderPlant()
+        plant_display.ClearRenderer()
+        vtk_plant_list = []
 
-plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
-plant_display.InitRenderWindow( axes_on=False, bkgnd=[0.8, 0.8, 0.8], res_x=1920, res_y=1080 )
-bkgnd_scene = BG.BackgroundScene()
-bkgnd_scene.GeneratePlantPots(vtk_plant_list)
-plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
-plant_display.InitInteractor()
-plant_display.InitLighting(mode=0)
-plant_display.RenderPlant()
-
-if SAVE_PLANT:
-    rep_plant.SavePlantFile('test_save.plant')
+    if SAVE_PLANT:
+        rep_plant.SavePlantFile(OUTDIR_PATH + '10_09_19_' + str(plant_n) + ".plant")
