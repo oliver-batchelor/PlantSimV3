@@ -17,7 +17,6 @@ class PlantData():
         self.numMeshSets = 0
         self.triMeshPntSets = []
         self.triMeshPntIndxSets = []
-
         self.triMeshColSets = []
         self.triMeshConnIdxs = []
         self.triMeshSetLabels = []

@@ -11,6 +11,7 @@ from tqdm import tqdm
 LOCAL_HOME_PATH = '/local/'
 PLANTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/V3Plants/'
 OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/plant_HM_dataset_10_09_19/'
+LABEL = 'train/'
 
 
 INTERACT_WITH_PLANT = False
@@ -19,16 +20,16 @@ rep_plant = PG.PlantData()
 vtk_plant_list = []
 
 rep_plant = PG.PlantData()
-rep_plant.LoadPlantFile(PLANTDIR_PATH + '10_09_19_' + str(20) + '.plant')
+rep_plant.LoadPlantFile(PLANTDIR_PATH + '10_09_19_' + str(61) + '.plant')
 vtk_plant = CVVTK.vtkPlantData(rep_plant)
 vtk_plant.BuildComponents()
 vtk_plant.SetActorPostions()
 vtk_plant_list.append(vtk_plant)
 
 plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
-plant_display.InitRenderWindow( axes_on=False, bkgnd=[0, 0, 0], res_x=600, res_y=600 )
+plant_display.InitRenderWindow( axes_on=False, bkgnd=[0.0, 0.0, 0.0], res_x=600, res_y=600 )
 bkgnd_scene = BG.BackgroundScene()
-bkgnd_scene.GeneratePlantPots(vtk_plant_list)
+#bkgnd_scene.GeneratePlantPots(vtk_plant_list)
 plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
 plant_display.InitInteractor()
 plant_display.InitLighting(mode=0)
@@ -57,22 +58,22 @@ if INTERACT_WITH_PLANT:
     plant_display.RenderPlant()
 else:
     plant_display.renderWindow.OffScreenRenderingOn()
-    for image_num in tqdm(range(1800, 2000)):
+    for image_num in tqdm(range(2500, 3000)):
         # Show plant and save image
         plant_display.SetPlantVisible(True)
         plant_display.SetActorsVisible(bkgnd_scene.BackgroundActorList, True)
         plant_display.SetActorsVisible(annotation_actors, False)
 
-        plant_display.SaveCameraImage(OUTDIR_PATH, 'train/', str(image_num))
+        plant_display.SaveCameraImage(OUTDIR_PATH, LABEL, str(image_num))
 
         # Hide plant, display annotations, save image
         plant_display.SetPlantVisible( False )
         plant_display.SetActorsVisible(bkgnd_scene.BackgroundActorList, False)
         plant_display.SetActorsVisible(annotation_actors, True)
 
-        plant_display.SaveCameraImage(OUTDIR_PATH, 'train/', 'a' + str(image_num))
+        plant_display.SaveCameraImage(OUTDIR_PATH, LABEL, 'a' + str(image_num))
 
-        IP.pyrDownSmple(OUTDIR_PATH + 'train/a' + str(image_num) + '.jpg')
+        IP.pyrDownSmple(OUTDIR_PATH + LABEL + 'a' + str(image_num) + '.jpg')
 
         # Move camera
         plant_display.MoveCamera(1 - 2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3))

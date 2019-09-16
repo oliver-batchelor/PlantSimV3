@@ -7,6 +7,12 @@ POT_TRANS_VAR = 0.006
 POT_ROT_VAR = 2
 
 
+#TODO: spline generation from line list with specified radius and horizontal variance
+#TODO: line pattern list generation- start points, vector, length, point variance, length variance
+#TODO: Ground generation
+#TODO: background objects & images
+
+
 class BackgroundScene():
     def __init__(self):
         self.BackgroundOriPoses = []
