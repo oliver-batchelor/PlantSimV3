@@ -158,11 +158,15 @@ class plantVTKDataDisplay():
             self.renderer.AddActor(bckgnd_a)
 
 
-    def InitInteractor(self):
+    def InitInteractor(self, observer=None):
         """Sets up default VTK 3D interactor"""
         self.windowInteractor = vtk.vtkRenderWindowInteractor()
         self.windowInteractor.SetRenderWindow(self.renderWindow)
+        style = vtk.vtkInteractorStyleJoystickCamera()
+        self.windowInteractor.SetInteractorStyle(style)
         self.windowInteractor.Initialize()
+        if observer != None:
+            self.windowInteractor.AddObserver(vtk.vtkCommand.MouseMoveEvent, observer, 1)
 
 
     def SetPlantVisible(self, show_actors):
