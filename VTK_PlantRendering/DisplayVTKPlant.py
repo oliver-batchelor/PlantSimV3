@@ -33,7 +33,7 @@ class plantVTKDataDisplay():
         cameraP = vtk.vtkCameraPass()
         opaque = vtk.vtkOpaquePass()
         peeling = vtk.vtkDepthPeelingPass()
-        peeling.SetMaximumNumberOfPeels(100)
+        peeling.SetMaximumNumberOfPeels(1000)
         peeling.SetOcclusionRatio(0.1)
 
         translucent = vtk.vtkTranslucentPass()
@@ -107,42 +107,44 @@ class plantVTKDataDisplay():
         self.writer.SetInputConnection(self.windowFilter.GetOutputPort())
 
 
-    def InitLighting(self, mode=0):
+    def InitLighting(self, mode=0, intensity_mul=1):
         """Sets up lights in scene- default is even overhead lighting (glasshouse)"""
         light_array = []
 
-        if mode == 0:
-            light_corner_pos = np.array([-2, 2.5, -2])
-            intensity = TOP_LIGHT_INTENS_MEAN
-            for n in range(2):
-                for light_idx in range(9):
-                    light_array.append(vtk.vtkLight())
-                    light_array[-1].SetLightTypeToSceneLight()
-                    light_array[-1].SetIntensity(np.random.normal(loc=intensity, scale=LIGHT_INTENS_VAR))
-                    light_array[-1].SetPosition(light_corner_pos[0], light_corner_pos[1], light_corner_pos[2])
-                    light_array[-1].SetPositional(True)
-                    light_array[-1].SetConeAngle(36)
-                    light_array[-1].SetFocalPoint(0, 2, 0)
-                    light_array[-1].SetDiffuseColor(1, 1, 0.984)
-                    light_array[-1].SetAmbientColor(1, 1, 0.984)
-                    light_array[-1].SetSpecularColor(1, 1, 0.984)
-                    light_corner_pos = light_corner_pos + [((light_idx + 1) % 3 == 0 and light_idx > 0) * 2, 0,
-                                                           2 - ((light_idx + 1) % 3 == 0 and light_idx > 0) * 6]
-                light_corner_pos = np.array([-2, -2, -2])
-                intensity = BOT_LIGHT_INTENS_MEAN
-        elif mode == 1:
-            light_array.append(vtk.vtkLight())
-            light_array[-1].SetLightTypeToSceneLight()
-            light_array[-1].SetIntensity(1)
-            light_array[-1].SetPosition(0, 5, 0)
-            light_array[-1].SetPositional(True)
-            light_array[-1].SetConeAngle(30)
-            light_array[-1].SetFocalPoint(0, 4, 0)
-            light_array[-1].SetDiffuseColor(1, 1, 0.984)
-            light_array[-1].SetAmbientColor(1, 1, 0.984)
-            light_array[-1].SetSpecularColor(1, 1, 0.984)
+        if mode != 0:
+            self.renderer.RemoveAllLights()
+            if mode == 1:
+                light_corner_pos = np.array([-2, 2.5, -2])
+                intensity = TOP_LIGHT_INTENS_MEAN
+                for n in range(2):
+                    for light_idx in range(9):
+                        light_array.append(vtk.vtkLight())
+                        light_array[-1].SetLightTypeToSceneLight()
+                        light_array[-1].SetIntensity(intensity_mul * np.random.normal(loc=intensity, scale=LIGHT_INTENS_VAR))
+                        light_array[-1].SetPosition(light_corner_pos[0], light_corner_pos[1], light_corner_pos[2])
+                        light_array[-1].SetPositional(True)
+                        light_array[-1].SetConeAngle(36)
+                        light_array[-1].SetFocalPoint(0, 2, 0)
+                        light_array[-1].SetDiffuseColor(1, 1, 0.984)
+                        light_array[-1].SetAmbientColor(1, 1, 0.984)
+                        light_array[-1].SetSpecularColor(1, 1, 0.984)
+                        light_corner_pos = light_corner_pos + [((light_idx + 1) % 3 == 0 and light_idx > 0) * 2, 0,
+                                                               2 - ((light_idx + 1) % 3 == 0 and light_idx > 0) * 6]
+                    light_corner_pos = np.array([-2, -2, -2])
+                    intensity = BOT_LIGHT_INTENS_MEAN
+            elif mode == 2:
+                light_array.append(vtk.vtkLight())
+                light_array[-1].SetLightTypeToSceneLight()
+                light_array[-1].SetIntensity(intensity_mul)
+                light_array[-1].SetPosition(0, 5, 0)
+                light_array[-1].SetPositional(True)
+                light_array[-1].SetConeAngle(30)
+                light_array[-1].SetFocalPoint(0, 4, 0)
+                light_array[-1].SetDiffuseColor(1, 1, 0.984)
+                light_array[-1].SetAmbientColor(1, 1, 0.984)
+                light_array[-1].SetSpecularColor(1, 1, 0.984)
 
-        self.renderer.RemoveAllLights()
+
         for light in light_array:
             self.renderer.AddLight(light)
 
