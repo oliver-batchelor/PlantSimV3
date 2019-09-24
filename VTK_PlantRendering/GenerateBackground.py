@@ -19,6 +19,7 @@ class BackgroundScene():
         self.BackgroundPolydataList = []
         self.BackgroundMapperList = []
         self.BackgroundActorList = []
+        self.BackgroundRenderers = []
 
 
     def GeneratePlantPots(self, plant_list):

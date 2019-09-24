@@ -10,7 +10,8 @@ from tqdm import tqdm
 
 LOCAL_HOME_PATH = '/local/'
 PLANTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/V3Plants/'
-OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/plant_HM_dataset_10_09_19/'
+OUTDIR_PATH = LOCAL_HOME_PATH + 'Dropbox/PlantSimData/plant_HM_dataset_24_09_19/'
+BCKGND_IMAGE_DIR = LOCAL_HOME_PATH + 'Dropbox/PlantPhotos/'
 LABEL = 'train/'
 
 
@@ -20,7 +21,7 @@ rep_plant = PG.PlantData()
 vtk_plant_list = []
 
 rep_plant = PG.PlantData()
-rep_plant.LoadPlantFile(PLANTDIR_PATH + '10_09_19_' + str(61) + '.plant')
+rep_plant.LoadPlantFile(PLANTDIR_PATH + '10_09_19_' + str(8) + '.plant')
 vtk_plant = CVVTK.vtkPlantData(rep_plant)
 vtk_plant.BuildComponents()
 vtk_plant.SetActorPostions()
@@ -32,7 +33,7 @@ bkgnd_scene = BG.BackgroundScene()
 #bkgnd_scene.GeneratePlantPots(vtk_plant_list)
 plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
 plant_display.InitInteractor()
-plant_display.InitLighting(mode=0)
+plant_display.InitLighting(mode=1, intensity_mul=3)
 
 # Add red spheres at node points
 annotation_actors = []
@@ -58,7 +59,7 @@ if INTERACT_WITH_PLANT:
     plant_display.RenderPlant()
 else:
     plant_display.renderWindow.OffScreenRenderingOn()
-    for image_num in tqdm(range(2500, 3000)):
+    for image_num in tqdm(range(3500, 4000)):
         # Show plant and save image
         plant_display.SetPlantVisible(True)
         plant_display.SetActorsVisible(bkgnd_scene.BackgroundActorList, True)
@@ -74,6 +75,7 @@ else:
         plant_display.SaveCameraImage(OUTDIR_PATH, LABEL, 'a' + str(image_num))
 
         IP.pyrDownSmple(OUTDIR_PATH + LABEL + 'a' + str(image_num) + '.jpg')
+        IP.AddRandomBackground(OUTDIR_PATH + LABEL + str(image_num) + '.jpg', BCKGND_IMAGE_DIR)
 
         # Move camera
         plant_display.MoveCamera(1 - 2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3), 0.1 - 0.2*np.random.rand(3))
