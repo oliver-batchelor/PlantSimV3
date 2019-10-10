@@ -173,8 +173,9 @@ class plantVTKDataDisplay():
 
     def SetPlantVisible(self, show_actors):
         """Shows/Hides plant actors"""
-        for actor in (self.vtk_plant_list[0].StemActorList + self.vtk_plant_list[0].MeshActorList):
-            actor.SetVisibility(show_actors)
+        for plant in self.vtk_plant_list:
+            for actor in (plant.StemActorList + plant.MeshActorList):
+                actor.SetVisibility(show_actors)
         self.renderWindow.Render()
 
 

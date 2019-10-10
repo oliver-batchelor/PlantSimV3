@@ -53,7 +53,7 @@ for plant_n in range(1):
 
     if DISPLAY_PLANT_SAMPLES:
         plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
-        plant_display.InitRenderWindow( stereo_on=True, axes_on=False, bkgnd=[0.8, 0.8, 0.8], res_x=1920, res_y=1080 )
+        plant_display.InitRenderWindow( stereo_on=False, axes_on=False, bkgnd=[0.0, 0.0, 0.0], res_x=1920, res_y=1080 )
         bkgnd_scene = BG.BackgroundScene()
         bkgnd_scene.GeneratePlantPots(vtk_plant_list)
         plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
