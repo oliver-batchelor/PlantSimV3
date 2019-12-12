@@ -15,6 +15,7 @@ class PlantData():
         self.tubeSetLabels = []
 
         self.numMeshSets = 0
+        self.triMeshOris = []
         self.triMeshPntSets = []
         self.triMeshPntIndxSets = []
         self.triMeshColSets = []

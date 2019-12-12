@@ -45,7 +45,7 @@ def GenRandStemRadii(geo_plant_rep, mode=0):
         spline_rad_set = []
 
         for point_n in range(len(seg_points)):
-            rad_mul = 1 + 0.25*np.sqrt(geo_plant_rep.numTubeSets - stemseg_idx) + 0.04*point_n
+            rad_mul = 1 + 0.1*np.sqrt(geo_plant_rep.numTubeSets - stemseg_idx) + 0.02*point_n
             ################# Randomisations ##########################
             pnt_rad = min(max(STEMTIPS_RAD*rad_mul, STEMRAD_MIN)  + rad_mul*np.random.normal(scale=STEMRAD_RAD_VAR), STEMRAD_MAX)
             ###########################################################
@@ -97,7 +97,7 @@ def GenRandSplineSeg(geo_plant_rep, seg_vec, mode=0):
     ###########################################################
 
     point_sep_mean = seg_length / num_points
-    spline_pnt_set = [-seg_vec*0.0005, [0, 0, 0], seg_vec*0.0005]
+    spline_pnt_set = [-0.0005*seg_vec, [0, 0, 0], 0.0005*seg_vec]
 
     for point_n in range(num_points):
 

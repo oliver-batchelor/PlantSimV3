@@ -189,10 +189,11 @@ class vtkPlantData():
         for idx, mapper in enumerate(self.MeshMapperList):
             poly_actor = vtk.vtkActor()
             poly_actor.SetMapper(mapper)
+            poly_actor.SetOrientation(self.plant_data.triMeshOris[idx])
             self.MeshActorList.append(poly_actor)
 
 
-    def SetActorPostions(self, offset=[0, 0, 0]):
+    def SetActorPoses(self, offset=(0, 0, 0)):
         """Set all actor origin positions on the fly based on lower stem segment vectors"""
         stem_end_positions = np.zeros((self.plant_data.numTubeSets, 3))
         for idx, actor in enumerate(self.StemActorList):
@@ -203,6 +204,7 @@ class vtkPlantData():
                 actor_origin_pos += self.plant_data.tubePntSets[prev_seg_idx][-1]
                 prev_seg_idx = self.plant_data.tubeConnIdxs[prev_seg_idx]
             actor.SetPosition(actor_origin_pos)
+
             stem_end_positions[idx] = actor_origin_pos + self.plant_data.tubePntSets[idx][-1]
         for idx, actor in enumerate(self.MeshActorList):
             leaf_origin_pos = stem_end_positions[self.plant_data.triMeshConnIdxs[idx]]

@@ -2,6 +2,7 @@ import geoplantrep as PG
 import numpy as np
 import math
 import vtk
+import cv2
 
 LEAF_G_MEAN = 0.6
 LEAF_G_VAR = 0.05
@@ -12,9 +13,10 @@ LEAF_B_VAR = 0.03
 
 LEAF_LENGTH_MEAN = 0.08
 LEAF_LENGTH_VAR = 0.02
-LEAF_WIDTH_MEAN = 0.06
+LEAF_WIDTH_MEAN = 0.04
 LEAF_WIDTH_VAR = 0.01
-LEAFGRID_RES = 100e-6    #m
+LEAF_DEPTH_VAR = 0.002
+LEAFGRID_RES = 1e-3    #m
 
 LEAF_LVEC_VAR = 0.2
 LEAF_LVEC_VERT_MUL = 0.3
@@ -81,10 +83,55 @@ def GenSplinePoints(vec, offset, length, num_points):
     return spline_pnt_set
 
 
+def GenNoiseImg(shape, kernel_s, d_scale):
+    """Creates noise image of specified size"""
+    # Generate random smooth surface
+    lowres_noise = np.random.normal(scale=d_scale*LEAF_DEPTH_VAR, size=kernel_s)
+    lowres_noise -= lowres_noise[int(kernel_s[0]/2), 0]
+
+    return cv2.resize(lowres_noise, shape, interpolation=cv2.INTER_CUBIC)
+
+
+def GenRandomLeaf(shape):
+    """Cuts a leaf shape out of randomised image with gaussian curves"""
+    img_s = (round(shape[0] / LEAFGRID_RES), round(shape[1] / LEAFGRID_RES))
+    noise_img = np.zeros(img_s)
+    for k in range(3, 6):
+        noise_img += GenNoiseImg(np.shape(noise_img)[::-1], (k, k), 3/k)
+
+    top_curve = np.zeros((1, img_s[0]))
+    bot_curve = np.zeros((1, img_s[0]))
+    for s in range(1):
+        T = (img_s[0]-1)/math.pi
+        top_curve += [math.sin(i/T) for i in range(img_s[0])]
+
+    top_curve = top_curve - top_curve[0][0]
+    top_curve *= 0.5*(img_s[1]-1) / max(0.001, np.max(top_curve))
+    bot_curve = (0.5*img_s[1] - top_curve[0]).astype(int)
+    top_curve = (top_curve[0] + 0.5*img_s[1]).astype(int)
+
+    point_set = []
+    for row_i, row in enumerate(noise_img):
+        l_lim = bot_curve[row_i]
+        u_lim = top_curve[row_i]
+
+        for col_i, z in enumerate(row[l_lim:u_lim]):
+            point_set.append([row_i*LEAFGRID_RES,
+                              (col_i+l_lim-round(img_s[1]/2))*LEAFGRID_RES,
+                              noise_img[row_i, col_i+l_lim]])
+
+    # noise_img += abs(np.min(noise_img))
+    # noise_img /= np.max(noise_img)
+    # cv2.imshow("test", noise_img)
+    # cv2.waitKey(10000)
+
+    return point_set
+
+
 def GenRandLeaves(geo_plant_rep, end_seg_idxs):
     """Create fine grain leaf structures"""
     for stem_seg_idx in end_seg_idxs:
-        leafTriPoints = [[0, 0, 0]]
+        leafTriPoints = []
         leafTriCols = []
         leafTriIndices = []
 
@@ -96,16 +143,11 @@ def GenRandLeaves(geo_plant_rep, end_seg_idxs):
         leaf_width = np.random.normal(loc=LEAF_WIDTH_MEAN, scale=LEAF_WIDTH_VAR)
         leaf_lvec = stemend_vec + np.random.normal(scale=LEAF_LVEC_VERT_MUL, size=3)
         leaf_hvec = np.cross(np.random.normal(size=3) + [0, LEAF_UP_BIAS, 0], leaf_lvec)
-        n_splne_pts_l = max(round(np.random.normal(loc=LEAFSPLNE_PNTCNT_MEAN, scale=LEAFSPLNE_PNTCNT_VAR)), 3)
-        n_splne_pts_c = max(round(np.random.normal(loc=LEAFSPLNE_PNTCNT_MEAN, scale=LEAFSPLNE_PNTCNT_VAR)), 3)
-        n_splne_pts_r = max(round(np.random.normal(loc=LEAFSPLNE_PNTCNT_MEAN, scale=LEAFSPLNE_PNTCNT_VAR)), 3)
         ###########################################################
         leaf_lvec /= np.linalg.norm(leaf_lvec, 2)
         leaf_hvec /= np.linalg.norm(leaf_hvec, 2)
 
-        leafTriPoints.extend(GenSplinePoints(leaf_lvec, [0, 0, 0], leaf_length, n_splne_pts_c))
-        leafTriPoints.extend(GenSplinePoints(leaf_lvec, -0.5*leaf_width*leaf_hvec, 0.7*leaf_length, n_splne_pts_l))
-        leafTriPoints.extend(GenSplinePoints(leaf_lvec, 0.5*leaf_width*leaf_hvec, 0.7*leaf_length, n_splne_pts_r))
+        leafTriPoints = GenRandomLeaf((leaf_length, leaf_width))
 
         vtk_points = vtk.vtkPoints()
         for point in leafTriPoints:
@@ -136,6 +178,10 @@ def GenRandLeaves(geo_plant_rep, end_seg_idxs):
                                 min(max(np.random.normal(loc=LEAF_B_MEAN, scale=LEAF_B_VAR), 0), 1)))
             ###########################################################
 
+        X_ANG = math.degrees(math.acos(np.dot(leaf_hvec, [0, 0, 1])/np.linalg.norm(leaf_hvec, 2)))
+        Y_ANG = math.degrees(math.acos(np.dot(leaf_lvec, [1, 0, 0]) / np.linalg.norm(leaf_lvec, 2)))
+
+        geo_plant_rep.triMeshOris.append([-90-X_ANG, Y_ANG, 0])
         geo_plant_rep.triMeshPntSets.append(leafTriPoints)
         geo_plant_rep.triMeshPntIndxSets.append(leafTriIndices)
         geo_plant_rep.triMeshColSets.append(leafTriCols)
