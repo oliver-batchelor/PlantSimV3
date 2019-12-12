@@ -41,7 +41,7 @@ for plant_n in range(1):
             for plant_r in range(1):
                 # Generate Randomised plant using a combination of algorithms
                 rep_plant = PG.PlantData()
-                GStem.GenRandSplineStem(rep_plant, 30)
+                GStem.GenRandSplineStem(rep_plant, 80)
                 end_stem_indxs = GStem.FindEndSegIndxs(rep_plant)
                 G2D.GenRandLeaves(rep_plant, end_stem_indxs)
                 #G3D.GenRandFruit(rep_plant)
@@ -55,7 +55,7 @@ for plant_n in range(1):
         plant_display = DP.plantVTKDataDisplay(vtk_plant_list)
         plant_display.InitRenderWindow( stereo_on=False, axes_on=True, bkgnd=[0.0, 0.0, 0.0], res_x=1920, res_y=1080 )
         bkgnd_scene = BG.BackgroundScene()
-        bkgnd_scene.GeneratePlantPots(vtk_plant_list)
+        #bkgnd_scene.GeneratePlantPots(vtk_plant_list)
         plant_display.AddActors(bckgnd_actors=bkgnd_scene.BackgroundActorList)
         plant_display.InitInteractor()
         plant_display.InitLighting(mode=1, intensity_mul=0.8)

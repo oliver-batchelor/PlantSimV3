@@ -4,17 +4,17 @@ import math
 import vtk
 import cv2
 
-LEAF_G_MEAN = 0.6
-LEAF_G_VAR = 0.05
-LEAF_R_MEAN = 0.4
-LEAF_R_VAR = 0.04
-LEAF_B_MEAN = 0.25
-LEAF_B_VAR = 0.03
+LEAF_G_MEAN = 0.7
+LEAF_G_VAR = 0.02
+LEAF_R_MEAN = 0.37
+LEAF_R_VAR = 0.01
+LEAF_B_MEAN = 0.28
+LEAF_B_VAR = 0.01
 
-LEAF_LENGTH_MEAN = 0.08
-LEAF_LENGTH_VAR = 0.02
-LEAF_WIDTH_MEAN = 0.04
-LEAF_WIDTH_VAR = 0.01
+LEAF_LENGTH_MEAN = 0.12
+LEAF_LENGTH_VAR = 0.03
+LEAF_WIDTH_MEAN = 0.07
+LEAF_WIDTH_VAR = 0.02
 LEAF_DEPTH_VAR = 0.002
 LEAFGRID_RES = 1e-3    #m
 
@@ -70,19 +70,6 @@ def ScanForIntersection(geo_plant_rep, leaf_tri_pnts, leaf_tri_indcs):
     return collision
 
 
-def GenSplinePoints(vec, offset, length, num_points):
-    point_sep_mean = length / num_points
-    spline_pnt_set = []
-    for point_n in range(num_points):
-        ################# Randomisations ##########################
-        distance_to_prev = np.random.normal(loc=point_sep_mean, scale=LEAFSPLNE_PNT_SEP_VAR)
-        vecpnt_offset = np.random.normal(loc=0, scale=LEAFSPLNE_VEC_VAR, size=3) + offset
-        offset_mul = 1 - max(abs(0.5 - point_n/num_points), 0.01)
-        spline_pnt_set.append(np.array(vec)*distance_to_prev*(point_n+1) + np.array(vecpnt_offset)*offset_mul)
-        ###########################################################
-    return spline_pnt_set
-
-
 def GenNoiseImg(shape, kernel_s, d_scale):
     """Creates noise image of specified size"""
     # Generate random smooth surface
@@ -101,14 +88,18 @@ def GenRandomLeaf(shape):
 
     top_curve = np.zeros((1, img_s[0]))
     bot_curve = np.zeros((1, img_s[0]))
-    for s in range(1):
-        T = (img_s[0]-1)/math.pi
-        top_curve += [math.sin(i/T) for i in range(img_s[0])]
+    for s in range(3):
+        T = (img_s[0] - 1) / (round(1 + s*np.random.rand())*math.pi)*np.random.normal(loc=1, scale=0.2)
+        top_curve += [math.sin(i/T)/(s+1) for i in range(img_s[0])]
+        T = (img_s[0] - 1) / (round(1 + s * np.random.rand()) * math.pi) * np.random.normal(loc=1, scale=0.2)
+        bot_curve += [math.sin(i/T)/(s+1) for i in range(img_s[0])]
 
     top_curve = top_curve - top_curve[0][0]
     top_curve *= 0.5*(img_s[1]-1) / max(0.001, np.max(top_curve))
-    bot_curve = (0.5*img_s[1] - top_curve[0]).astype(int)
-    top_curve = (top_curve[0] + 0.5*img_s[1]).astype(int)
+    top_curve = (top_curve[0] + 0.5 * img_s[1]).astype(int)
+    bot_curve = bot_curve - bot_curve[0][0]
+    bot_curve *= 0.5 * (img_s[1] - 1) / max(0.001, np.max(bot_curve))
+    bot_curve = (0.5*img_s[1] - bot_curve[0]).astype(int)
 
     point_set = []
     for row_i, row in enumerate(noise_img):
@@ -141,11 +132,15 @@ def GenRandLeaves(geo_plant_rep, end_seg_idxs):
         ################# Randomisations ##########################
         leaf_length = np.random.normal(loc=LEAF_LENGTH_MEAN, scale=LEAF_LENGTH_VAR)
         leaf_width = np.random.normal(loc=LEAF_WIDTH_MEAN, scale=LEAF_WIDTH_VAR)
-        leaf_lvec = stemend_vec + np.random.normal(scale=LEAF_LVEC_VERT_MUL, size=3)
-        leaf_hvec = np.cross(np.random.normal(size=3) + [0, LEAF_UP_BIAS, 0], leaf_lvec)
+        leaf_xvec = stemend_vec + np.random.normal(scale=LEAF_LVEC_VERT_MUL, size=3)
+        leaf_zvec = np.cross(np.random.normal(size=3) + [0, LEAF_UP_BIAS, 0], leaf_xvec)
         ###########################################################
-        leaf_lvec /= np.linalg.norm(leaf_lvec, 2)
-        leaf_hvec /= np.linalg.norm(leaf_hvec, 2)
+        leaf_xvec /= np.linalg.norm(leaf_xvec, 2)
+        leaf_zvec /= np.linalg.norm(leaf_zvec, 2)
+        leaf_yvec = np.cross(leaf_zvec, leaf_xvec)
+        leaf_yvec /= np.linalg.norm(leaf_yvec, 2)
+
+        leaf_frame = np.transpose([leaf_xvec, leaf_yvec, leaf_zvec])
 
         leafTriPoints = GenRandomLeaf((leaf_length, leaf_width))
 
@@ -178,10 +173,14 @@ def GenRandLeaves(geo_plant_rep, end_seg_idxs):
                                 min(max(np.random.normal(loc=LEAF_B_MEAN, scale=LEAF_B_VAR), 0), 1)))
             ###########################################################
 
-        X_ANG = math.degrees(math.acos(np.dot(leaf_hvec, [0, 0, 1])/np.linalg.norm(leaf_hvec, 2)))
-        Y_ANG = math.degrees(math.acos(np.dot(leaf_lvec, [1, 0, 0]) / np.linalg.norm(leaf_lvec, 2)))
+        t_mat = np.matmul(leaf_frame, [[1, 0, 0],
+                                       [0, 0, 1],
+                                       [0, 1, 0]])
+        X_ANG = math.asin(t_mat[1, 2])
+        Y_ANG = math.asin(-t_mat[0, 2]/np.cos(X_ANG))
+        Z_ANG = math.acos(t_mat[1, 1]/np.cos(X_ANG))
 
-        geo_plant_rep.triMeshOris.append([-90-X_ANG, Y_ANG, 0])
+        geo_plant_rep.triMeshOris.append([math.degrees(X_ANG), math.degrees(Y_ANG), math.degrees(Z_ANG)])
         geo_plant_rep.triMeshPntSets.append(leafTriPoints)
         geo_plant_rep.triMeshPntIndxSets.append(leafTriIndices)
         geo_plant_rep.triMeshColSets.append(leafTriCols)
