@@ -41,7 +41,7 @@ for plant_n in range(1):
             for plant_r in range(1):
                 # Generate Randomised plant using a combination of algorithms
                 rep_plant = PG.PlantData()
-                GStem.GenRandSplineStem(rep_plant, 80)
+                GStem.GenRandSplineStem(rep_plant, 50)
                 end_stem_indxs = GStem.FindEndSegIndxs(rep_plant)
                 G2D.GenRandLeaves(rep_plant, end_stem_indxs)
                 #G3D.GenRandFruit(rep_plant)

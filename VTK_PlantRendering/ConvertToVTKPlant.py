@@ -189,7 +189,6 @@ class vtkPlantData():
         for idx, mapper in enumerate(self.MeshMapperList):
             poly_actor = vtk.vtkActor()
             poly_actor.SetMapper(mapper)
-            poly_actor.SetOrientation(self.plant_data.triMeshOris[idx])
             self.MeshActorList.append(poly_actor)
 
 
@@ -209,3 +208,4 @@ class vtkPlantData():
         for idx, actor in enumerate(self.MeshActorList):
             leaf_origin_pos = stem_end_positions[self.plant_data.triMeshConnIdxs[idx]]
             actor.SetPosition(leaf_origin_pos)
+            actor.SetOrientation(self.plant_data.triMeshOris[idx])
