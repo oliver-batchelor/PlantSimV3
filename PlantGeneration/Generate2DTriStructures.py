@@ -11,16 +11,16 @@ LEAF_R_VAR = 0.01
 LEAF_B_MEAN = 0.28
 LEAF_B_VAR = 0.01
 
-LEAF_LENGTH_MEAN = 0.12
+LEAF_LENGTH_MEAN = 0.13
 LEAF_LENGTH_VAR = 0.03
-LEAF_WIDTH_MEAN = 0.07
-LEAF_WIDTH_VAR = 0.02
+LEAF_WIDTH_MEAN = 0.06
+LEAF_WIDTH_VAR = 0.01
 LEAF_DEPTH_VAR = 0.002
 LEAFGRID_RES = 2e-3    #m
 
 LEAF_LVEC_VAR = 0.2
-LEAF_LVEC_VERT_MUL = 0.3
-LEAF_UP_BIAS = 100
+LEAF_LVEC_VERT_MUL = 0.2
+LEAF_UP_BIAS = 10
 LEAFSPLNE_PNTCNT_MEAN = 12
 LEAFSPLNE_PNTCNT_VAR = 4
 LEAFSPLNE_PNT_SEP_VAR = 0.003
@@ -87,8 +87,8 @@ def GenRandomLeaf(shape):
     img_s = (round(shape[0] / LEAFGRID_RES), leaf_img_w)
 
     noise_img = np.zeros(img_s)
-    for k in range(3, 13, 2):
-        noise_img += GenNoiseImg(np.shape(noise_img)[::-1], (k, k), 3/k)
+    for k in range(1, 13, 2):
+        noise_img += GenNoiseImg(np.shape(noise_img)[::-1], (k, k), 30/k**2)
 
     top_curve = np.zeros((1, img_s[0]))
     bot_curve = np.zeros((1, img_s[0]))
@@ -115,11 +115,6 @@ def GenRandomLeaf(shape):
             point_set.append([row_i*LEAFGRID_RES,
                               (l_lim + col_i - mid_leaf_idx)*LEAFGRID_RES,
                               noise_img[row_i, col_i + l_lim]])
-
-    # noise_img += abs(np.min(noise_img))
-    # noise_img /= np.max(noise_img)
-    # cv2.imshow("test", noise_img)
-    # cv2.waitKey(10000)
 
     return point_set
 

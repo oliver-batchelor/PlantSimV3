@@ -40,7 +40,7 @@ class BackgroundScene():
             poly_actor = vtk.vtkActor()
             poly_actor.SetMapper(plant_bag_mapper)
             poly_actor.SetPosition(plant_pos[0] + center_offset[0],
-                                   -POT_SIZE / 2 + plant_pos[1] + center_offset[1] + 0.006,
+                                   -POT_SIZE / 2 + plant_pos[1],
                                    plant_pos[2] + center_offset[2])
             poly_actor.SetOrientation(center_rot)
             self.BackgroundPolydataList.append(plant_bag)

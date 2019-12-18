@@ -2,12 +2,12 @@ import geoplantrep as PG
 import numpy as np
 
 STEMSEG_CNT_VAR = 3
-STEMSEG_LENGTH_MEAN = 0.04
+STEMSEG_LENGTH_MEAN = 0.06
 STEMSEG_LENGTH_VAR = 0.03
 STEMSEG_UPMUL_MEAN = 2
 STEMSEG_UPMUL_VAR = 0.6
 STEMSEG_HORIZ_VAR = 3
-STEMSEG_OUTRAD_MUL = 0.0005
+STEMSEG_OUTRAD_MUL = 0.0001
 
 STEMPNT_CNT_MEAN = 2
 STEMPNT_CNT_VAR = 1
@@ -17,13 +17,13 @@ STEMPNT_VECOFFSET_VAR = 0.01
 STEMTIPS_RAD = 0.001
 STEMRAD_RAD_VAR = 0.0001
 STEMRAD_MIN = 0.001
-STEMRAD_MAX = 0.01
+STEMRAD_MAX = 0.02
 
-STEMCOL_R_MEAN = 100
+STEMCOL_R_MEAN = 55
 STEMCOL_R_VAR = 12
-STEMCOL_G_MEAN = 160
+STEMCOL_G_MEAN = 120
 STEMCOL_G_VAR = 10
-STEMCOL_B_MEAN = 50
+STEMCOL_B_MEAN = 40
 STEMCOL_B_VAR = 5
 
 
@@ -45,7 +45,7 @@ def GenRandStemRadii(geo_plant_rep, mode=0):
         spline_rad_set = []
 
         for point_n in range(len(seg_points)):
-            rad_mul = 1 + 0.1*np.sqrt(geo_plant_rep.numTubeSets - stemseg_idx) + 0.02*point_n
+            rad_mul = 1 + 0.08*np.sqrt(geo_plant_rep.numTubeSets - stemseg_idx) + 0.01*point_n + 3*(point_n==0)
             ################# Randomisations ##########################
             pnt_rad = min(max(STEMTIPS_RAD*rad_mul, STEMRAD_MIN)  + rad_mul*np.random.normal(scale=STEMRAD_RAD_VAR), STEMRAD_MAX)
             ###########################################################
@@ -65,10 +65,13 @@ def GenRandStemCols(geo_plant_rep, mode=0):
 
         for point_n in range(len(seg_points)):
             ################# Randomisations ##########################
-            pnt_col = (np.random.normal(loc=STEMCOL_R_MEAN, scale=STEMCOL_R_VAR),
+            pnt_col = [np.random.normal(loc=STEMCOL_R_MEAN, scale=STEMCOL_R_VAR),
                        np.random.normal(loc=STEMCOL_G_MEAN, scale=STEMCOL_G_VAR),
-                       np.random.normal(loc=STEMCOL_B_MEAN, scale=STEMCOL_B_VAR))
+                       np.random.normal(loc=STEMCOL_B_MEAN, scale=STEMCOL_B_VAR)]
             ###########################################################
+
+            if stemseg_idx == 0 and point_n == 0:
+                pnt_col[0] = min(255, pnt_col[0] + 30)
 
             spline_col_set.append(pnt_col)
         if stemseg_idx > 0:
